@@ -28,11 +28,12 @@ Building a custom source::
 
 See :class:`Scraper` and :class:`BaseFetcher` for the full API reference.
 """
+
 from finews._scraper import Scraper
-from finews._sources import BUILTIN_SOURCES, BUILTIN_SOURCE_NAMES
+from finews._sources import BUILTIN_SOURCE_NAMES, BUILTIN_SOURCES
+from scraper.fetchers.base import BaseFetcher, FetchError
 from scraper.models.article import Article
 from scraper.models.source import SourceConfig
-from scraper.fetchers.base import BaseFetcher, FetchError
 
 __all__ = [
     # Core API

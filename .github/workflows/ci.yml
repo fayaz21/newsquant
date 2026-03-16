@@ -27,10 +27,9 @@ jobs:
       - name: Install dependencies
         run: pip install -e ".[dev]"
 
-      - name: Download spaCy model
-        run: python -m spacy download en_core_web_sm
-
       - name: Run tests
+        env:
+          DATABASE_URL: sqlite:///:memory:
         run: pytest --cov=finews --cov=scraper --cov-report=term-missing -q
 
   lint:

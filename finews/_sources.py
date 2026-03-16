@@ -4,6 +4,7 @@ Maps friendly short names (e.g. ``"yahoofinance"``) to pre-configured
 :class:`~scraper.models.source.SourceConfig` objects.  This is the single
 source of truth for what ``Scraper(sources=[...])`` accepts.
 """
+
 from __future__ import annotations
 
 from scraper.models.source import SourceConfig

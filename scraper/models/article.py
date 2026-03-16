@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, field_validator
 
@@ -11,12 +10,12 @@ class RawArticle(BaseModel):
 
     url: str
     title: str
-    summary: Optional[str] = None
+    summary: str | None = None
     published_at: datetime
     source_name: str
-    author: Optional[str] = None
-    external_id: Optional[str] = None
-    raw_json: Optional[str] = None
+    author: str | None = None
+    external_id: str | None = None
+    raw_json: str | None = None
 
 
 class Article(BaseModel):
@@ -24,30 +23,30 @@ class Article(BaseModel):
 
     url: str
     url_hash: str
-    content_hash: Optional[str] = None
+    content_hash: str | None = None
     title: str
     body: str
-    summary: Optional[str] = None
+    summary: str | None = None
     word_count: int = 0
     source_name: str
-    source_id: Optional[int] = None
-    author: Optional[str] = None
+    source_id: int | None = None
+    author: str | None = None
     language: str = "en"
     published_at: datetime
     scraped_at: datetime
     tickers: list[str] = []
     companies: list[str] = []
     sectors: list[str] = []
-    sentiment_score: Optional[float] = None
+    sentiment_score: float | None = None
     quality_score: float = 0.0
     quality_flags: list[str] = []
     is_paywall: bool = False
     is_duplicate: bool = False
     is_near_duplicate: bool = False
     is_metadata_only: bool = False
-    simhash: Optional[str] = None
-    external_id: Optional[str] = None
-    raw_json: Optional[str] = None
+    simhash: str | None = None
+    external_id: str | None = None
+    raw_json: str | None = None
 
     @field_validator("word_count", mode="before")
     @classmethod

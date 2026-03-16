@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
-from typing import Optional
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from scraper.models.article import Article
+
 from .models import ArticleORM, ScrapeRun, Source
 
 
@@ -71,9 +71,7 @@ class ArticleRepository:
 
     def url_hash_exists(self, url_hash: str) -> bool:
         return bool(
-            self.session.scalar(
-                select(ArticleORM.id).where(ArticleORM.url_hash == url_hash)
-            )
+            self.session.scalar(select(ArticleORM.id).where(ArticleORM.url_hash == url_hash))
         )
 
     def external_id_exists(self, source_name: str, external_id: str) -> bool:
@@ -99,6 +97,7 @@ class ArticleRepository:
         """Return simhash values of articles published in the last N hours.
         Used for near-duplicate detection window."""
         from datetime import timedelta, timezone
+
         cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
         rows = self.session.scalars(
             select(ArticleORM.simhash)
@@ -112,11 +111,11 @@ class ArticleRepository:
 
     def query_articles(
         self,
-        ticker: Optional[str] = None,
-        from_dt: Optional[datetime] = None,
-        to_dt: Optional[datetime] = None,
-        source_name: Optional[str] = None,
-        min_quality: Optional[float] = None,
+        ticker: str | None = None,
+        from_dt: datetime | None = None,
+        to_dt: datetime | None = None,
+        source_name: str | None = None,
+        min_quality: float | None = None,
         limit: int = 100,
         offset: int = 0,
     ) -> list[ArticleORM]:
@@ -137,23 +136,38 @@ class ArticleRepository:
 
     def stats(self) -> dict:
         total = self.session.scalar(select(func.count()).select_from(ArticleORM)) or 0
-        dupes = self.session.scalar(
-            select(func.count()).select_from(ArticleORM).where(ArticleORM.is_duplicate)
-        ) or 0
-        near_dupes = self.session.scalar(
-            select(func.count()).select_from(ArticleORM).where(ArticleORM.is_near_duplicate)
-        ) or 0
-        paywalled = self.session.scalar(
-            select(func.count()).select_from(ArticleORM).where(ArticleORM.is_paywall)
-        ) or 0
-        metadata_only = self.session.scalar(
-            select(func.count()).select_from(ArticleORM).where(ArticleORM.is_metadata_only)
-        ) or 0
+        dupes = (
+            self.session.scalar(
+                select(func.count()).select_from(ArticleORM).where(ArticleORM.is_duplicate)
+            )
+            or 0
+        )
+        near_dupes = (
+            self.session.scalar(
+                select(func.count()).select_from(ArticleORM).where(ArticleORM.is_near_duplicate)
+            )
+            or 0
+        )
+        paywalled = (
+            self.session.scalar(
+                select(func.count()).select_from(ArticleORM).where(ArticleORM.is_paywall)
+            )
+            or 0
+        )
+        metadata_only = (
+            self.session.scalar(
+                select(func.count()).select_from(ArticleORM).where(ArticleORM.is_metadata_only)
+            )
+            or 0
+        )
         full_text = total - metadata_only
         avg_quality = self.session.scalar(select(func.avg(ArticleORM.quality_score))) or 0.0
-        high_quality = self.session.scalar(
-            select(func.count()).select_from(ArticleORM).where(ArticleORM.quality_score >= 0.8)
-        ) or 0
+        high_quality = (
+            self.session.scalar(
+                select(func.count()).select_from(ArticleORM).where(ArticleORM.quality_score >= 0.8)
+            )
+            or 0
+        )
         return {
             "total_articles": total,
             "full_text": full_text,
@@ -183,7 +197,7 @@ class ScrapeRunRepository:
     def __init__(self, session: Session):
         self.session = session
 
-    def create(self, source_name: str, run_type: str, source_id: Optional[int] = None) -> ScrapeRun:
+    def create(self, source_name: str, run_type: str, source_id: int | None = None) -> ScrapeRun:
         run = ScrapeRun(source_name=source_name, run_type=run_type, source_id=source_id)
         self.session.add(run)
         self.session.flush()
@@ -197,7 +211,7 @@ class ScrapeRunRepository:
         stored: int,
         duped: int,
         failed: int,
-        error: Optional[str] = None,
+        error: str | None = None,
     ) -> None:
         run.status = status
         run.ended_at = datetime.now(timezone.utc)
@@ -208,13 +222,13 @@ class ScrapeRunRepository:
         run.error_message = error
         self.session.flush()
 
-    def recent(self, source_name: Optional[str] = None, limit: int = 20) -> list[ScrapeRun]:
+    def recent(self, source_name: str | None = None, limit: int = 20) -> list[ScrapeRun]:
         stmt = select(ScrapeRun).order_by(ScrapeRun.started_at.desc()).limit(limit)
         if source_name:
             stmt = stmt.where(ScrapeRun.source_name == source_name)
         return list(self.session.scalars(stmt))
 
-    def get_last_backfill(self, source_name: str) -> Optional[ScrapeRun]:
+    def get_last_backfill(self, source_name: str) -> ScrapeRun | None:
         return self.session.scalar(
             select(ScrapeRun)
             .where(ScrapeRun.source_name == source_name, ScrapeRun.run_type == "backfill")

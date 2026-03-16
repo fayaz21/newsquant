@@ -4,11 +4,12 @@ import csv
 import io
 import logging
 import zipfile
+from collections.abc import Generator
 from datetime import datetime, timezone
-from typing import Generator, Optional
 
 from scraper.models.article import RawArticle
 from scraper.models.source import SourceConfig
+
 from .base import BaseFetcher
 
 logger = logging.getLogger(__name__)
@@ -28,11 +29,12 @@ class GDELTFetcher(BaseFetcher):
 
     def fetch(
         self,
-        from_dt: Optional[datetime] = None,
-        to_dt: Optional[datetime] = None,
-        url_cursor: int = 0,
+        from_dt: datetime | None = None,
+        to_dt: datetime | None = None,
+        ticker: str | None = None,
         **kwargs,
     ) -> list[RawArticle]:
+        url_cursor: int = kwargs.get("url_cursor", 0)
         articles: list[RawArticle] = []
         for raw in self._iter_articles(from_dt, to_dt, url_cursor):
             articles.append(raw)
@@ -74,8 +76,8 @@ class GDELTFetcher(BaseFetcher):
 
     def _iter_articles(
         self,
-        from_dt: Optional[datetime],
-        to_dt: Optional[datetime],
+        from_dt: datetime | None,
+        to_dt: datetime | None,
         url_cursor: int,
     ) -> Generator[RawArticle, None, None]:
         for article, _ in self.iter_articles_resumable(
@@ -85,9 +87,7 @@ class GDELTFetcher(BaseFetcher):
         ):
             yield article
 
-    def _iter_gkg_file_urls(
-        self, from_dt: datetime, to_dt: datetime
-    ) -> Generator[str, None, None]:
+    def _iter_gkg_file_urls(self, from_dt: datetime, to_dt: datetime) -> Generator[str, None, None]:
         try:
             resp = self._get(GDELT_MASTER_URL)
             lines = resp.text.splitlines()
@@ -106,22 +106,20 @@ class GDELTFetcher(BaseFetcher):
             fname = file_url.split("/")[-1]
             ts_str = fname[:14]
             try:
-                file_dt = datetime.strptime(ts_str, "%Y%m%d%H%M%S").replace(
-                    tzinfo=timezone.utc
-                )
+                file_dt = datetime.strptime(ts_str, "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc)
             except ValueError:
                 continue
             if from_dt <= file_dt <= to_dt:
                 yield file_url
 
-    def _download_gkg_file(
-        self, file_url: str
-    ) -> list[tuple[str, str, datetime, str]]:
+    def _download_gkg_file(self, file_url: str) -> list[tuple[str, str, datetime, str]]:
         resp = self._get(file_url)
         with zipfile.ZipFile(io.BytesIO(resp.content)) as zf:
             csv_name = zf.namelist()[0]
             with zf.open(csv_name) as f:
-                reader = csv.reader(io.TextIOWrapper(f, encoding="utf-8", errors="replace"), delimiter="\t")
+                reader = csv.reader(
+                    io.TextIOWrapper(f, encoding="utf-8", errors="replace"), delimiter="\t"
+                )
                 rows = []
                 for row in reader:
                     if len(row) < 5:

@@ -1,10 +1,11 @@
+from scraper.models.source import SourceConfig
+
 from .base import BaseFetcher, FetchError
-from .rss import RSSFetcher
-from .newsapi import NewsAPIFetcher
 from .finnhub import FinnhubFetcher
 from .gdelt import GDELTFetcher
+from .newsapi import NewsAPIFetcher
+from .rss import RSSFetcher
 from .wayback import WaybackFetcher
-from scraper.models.source import SourceConfig
 
 
 def get_fetcher(config: SourceConfig) -> BaseFetcher:

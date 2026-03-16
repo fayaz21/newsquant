@@ -4,23 +4,57 @@ import logging
 import re
 from functools import lru_cache
 from pathlib import Path
+
 logger = logging.getLogger(__name__)
 
 # Regex patterns for common ticker formats
 _DOLLAR_TICKER = re.compile(r"\$([A-Z]{1,5})\b")
-_EXCHANGE_TICKER = re.compile(
-    r"\b(?:NYSE|NASDAQ|AMEX|TSX|LSE):\s*([A-Z]{1,5})\b"
-)
+_EXCHANGE_TICKER = re.compile(r"\b(?:NYSE|NASDAQ|AMEX|TSX|LSE):\s*([A-Z]{1,5})\b")
 
 # Common financial keywords for relevance checks
-FINANCIAL_KEYWORDS = frozenset([
-    "stock", "share", "equity", "market", "trading", "investor", "earnings",
-    "revenue", "profit", "loss", "ipo", "merger", "acquisition", "dividend",
-    "fed", "federal reserve", "interest rate", "inflation", "gdp", "economy",
-    "s&p", "dow", "nasdaq", "bond", "yield", "hedge fund", "portfolio",
-    "analyst", "upgrade", "downgrade", "buy", "sell", "hold", "target price",
-    "quarterly", "guidance", "outlook", "fiscal", "quarterly results",
-])
+FINANCIAL_KEYWORDS = frozenset(
+    [
+        "stock",
+        "share",
+        "equity",
+        "market",
+        "trading",
+        "investor",
+        "earnings",
+        "revenue",
+        "profit",
+        "loss",
+        "ipo",
+        "merger",
+        "acquisition",
+        "dividend",
+        "fed",
+        "federal reserve",
+        "interest rate",
+        "inflation",
+        "gdp",
+        "economy",
+        "s&p",
+        "dow",
+        "nasdaq",
+        "bond",
+        "yield",
+        "hedge fund",
+        "portfolio",
+        "analyst",
+        "upgrade",
+        "downgrade",
+        "buy",
+        "sell",
+        "hold",
+        "target price",
+        "quarterly",
+        "guidance",
+        "outlook",
+        "fiscal",
+        "quarterly results",
+    ]
+)
 
 
 @lru_cache(maxsize=1)
@@ -63,7 +97,6 @@ def extract_tickers(text: str, use_spacy: bool = False) -> list[str]:
 
 def _spacy_extract(text: str) -> list[str]:
     try:
-        import spacy
         nlp = _get_spacy_model()
         if nlp is None:
             return []
@@ -85,6 +118,7 @@ def _spacy_extract(text: str) -> list[str]:
 def _get_spacy_model():
     try:
         import spacy
+
         return spacy.load("en_core_web_sm")
     except Exception:
         logger.debug("spaCy model not loaded — install 'en_core_web_sm'")

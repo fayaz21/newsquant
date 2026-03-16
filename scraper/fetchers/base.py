@@ -1,11 +1,11 @@
 """Base class and shared HTTP machinery for all fetchers."""
+
 from __future__ import annotations
 
 import logging
 import time
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Optional
 
 import httpx
 from tenacity import (
@@ -94,9 +94,9 @@ class BaseFetcher(ABC):
     @abstractmethod
     def fetch(
         self,
-        from_dt: Optional[datetime] = None,
-        to_dt: Optional[datetime] = None,
-        ticker: Optional[str] = None,
+        from_dt: datetime | None = None,
+        to_dt: datetime | None = None,
+        ticker: str | None = None,
         **kwargs,
     ) -> list[RawArticle]:
         """Fetch and return raw articles from this source.

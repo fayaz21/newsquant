@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Optional
 
 import yaml
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -13,10 +12,10 @@ from scraper.pipeline.orchestrator import Orchestrator
 
 logger = logging.getLogger(__name__)
 
-_scheduler: Optional[BackgroundScheduler] = None
+_scheduler: BackgroundScheduler | None = None
 
 
-def load_sources(path: Optional[str] = None) -> list[SourceConfig]:
+def load_sources(path: str | None = None) -> list[SourceConfig]:
     if path is None:
         path = str(Path(__file__).parents[2] / "config" / "sources.yaml")
     with open(path) as f:
@@ -38,7 +37,7 @@ def _make_job(config: SourceConfig):
     return job
 
 
-def start_scheduler(sources_path: Optional[str] = None) -> BackgroundScheduler:
+def start_scheduler(sources_path: str | None = None) -> BackgroundScheduler:
     global _scheduler
     sources = load_sources(sources_path)
 

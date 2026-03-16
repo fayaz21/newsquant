@@ -3,11 +3,11 @@ from __future__ import annotations
 import json
 import logging
 from datetime import datetime, timezone
-from typing import Optional
 
 from config.settings import settings
 from scraper.models.article import RawArticle
 from scraper.models.source import SourceConfig
+
 from .base import BaseFetcher, FetchError
 
 logger = logging.getLogger(__name__)
@@ -24,9 +24,9 @@ class FinnhubFetcher(BaseFetcher):
 
     def fetch(
         self,
-        from_dt: Optional[datetime] = None,
-        to_dt: Optional[datetime] = None,
-        ticker: Optional[str] = None,
+        from_dt: datetime | None = None,
+        to_dt: datetime | None = None,
+        ticker: str | None = None,
         **kwargs,
     ) -> list[RawArticle]:
         if ticker:
@@ -52,8 +52,8 @@ class FinnhubFetcher(BaseFetcher):
     def _fetch_company_news(
         self,
         ticker: str,
-        from_dt: Optional[datetime],
-        to_dt: Optional[datetime],
+        from_dt: datetime | None,
+        to_dt: datetime | None,
     ) -> list[RawArticle]:
         now = datetime.now(timezone.utc)
         params = {

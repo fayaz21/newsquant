@@ -1,7 +1,6 @@
 """Source configuration model."""
-from __future__ import annotations
 
-from typing import Optional
+from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
@@ -76,7 +75,7 @@ class SourceConfig(BaseModel):
         default=1.0,
         description="Max requests per second. 0 disables rate limiting.",
     )
-    schedule_cron: Optional[str] = None
+    schedule_cron: str | None = None
     backfill_only: bool = False
 
     # ── Source-specific fields ────────────────────────────────────────────────

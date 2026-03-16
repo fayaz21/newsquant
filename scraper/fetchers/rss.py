@@ -3,12 +3,12 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
-from typing import Optional
 
 import feedparser
 
 from scraper.models.article import RawArticle
 from scraper.models.source import SourceConfig
+
 from .base import BaseFetcher
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ def _parse_date(entry) -> datetime:
         val = getattr(entry, field, None)
         if val:
             try:
-                return datetime(*val[:6], tzinfo=timezone.utc)
+                return datetime(val[0], val[1], val[2], val[3], val[4], val[5], tzinfo=timezone.utc)
             except Exception:
                 pass
     for field in ("published", "updated"):
@@ -33,7 +33,7 @@ def _parse_date(entry) -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _entry_summary(entry) -> Optional[str]:
+def _entry_summary(entry) -> str | None:
     for field in ("summary", "description", "content"):
         val = getattr(entry, field, None)
         if val:
@@ -49,9 +49,9 @@ class RSSFetcher(BaseFetcher):
 
     def fetch(
         self,
-        from_dt: Optional[datetime] = None,
-        to_dt: Optional[datetime] = None,
-        ticker: Optional[str] = None,
+        from_dt: datetime | None = None,
+        to_dt: datetime | None = None,
+        ticker: str | None = None,
         **kwargs,
     ) -> list[RawArticle]:
         articles: list[RawArticle] = []

@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Generator
 from datetime import datetime, timezone
-from typing import Generator, Optional
 
 from scraper.models.article import RawArticle
+
 from .base import BaseFetcher
 
 logger = logging.getLogger(__name__)
@@ -17,11 +18,12 @@ class WaybackFetcher(BaseFetcher):
 
     def fetch(
         self,
-        from_dt: Optional[datetime] = None,
-        to_dt: Optional[datetime] = None,
-        url_cursor: int = 0,
+        from_dt: datetime | None = None,
+        to_dt: datetime | None = None,
+        ticker: str | None = None,
         **kwargs,
     ) -> list[RawArticle]:
+        url_cursor: int = kwargs.get("url_cursor", 0)
         articles: list[RawArticle] = []
         for article, _ in self.iter_articles_resumable(
             from_dt or datetime(2015, 1, 1, tzinfo=timezone.utc),

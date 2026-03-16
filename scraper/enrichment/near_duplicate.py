@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Near-duplicate detection using SimHash.
 
 Strategy:
@@ -14,8 +12,9 @@ This catches:
   - Boilerplate-heavy press releases cloned across PR sites
 """
 
-import re
+from __future__ import annotations
 
+import re
 
 # Hamming distance threshold — ≤10 bits different (out of 64) → near-duplicate
 # 10/64 = ~15% bit difference. Calibrated for article-length text (~200–2000 words).
@@ -29,18 +28,52 @@ def _tokenise(text: str) -> list[str]:
     text = re.sub(r"[^a-z0-9\s]", " ", text)
     tokens = text.split()
     # Remove stop words (short tokens add noise to SimHash)
-    stopwords = frozenset([
-        "the", "a", "an", "and", "or", "but", "in", "on", "at", "to",
-        "for", "of", "with", "by", "from", "is", "was", "are", "were",
-        "be", "been", "has", "have", "had", "will", "would", "could",
-        "should", "its", "it", "this", "that", "as", "up", "down",
-    ])
+    stopwords = frozenset(
+        [
+            "the",
+            "a",
+            "an",
+            "and",
+            "or",
+            "but",
+            "in",
+            "on",
+            "at",
+            "to",
+            "for",
+            "of",
+            "with",
+            "by",
+            "from",
+            "is",
+            "was",
+            "are",
+            "were",
+            "be",
+            "been",
+            "has",
+            "have",
+            "had",
+            "will",
+            "would",
+            "could",
+            "should",
+            "its",
+            "it",
+            "this",
+            "that",
+            "as",
+            "up",
+            "down",
+        ]
+    )
     return [t for t in tokens if len(t) > 2 and t not in stopwords]
 
 
 def compute_simhash(text: str) -> str:
     """Return SimHash as a zero-padded 16-char hex string."""
     from simhash import Simhash
+
     tokens = _tokenise(text[:10_000])  # cap for speed
     if not tokens:
         return "0" * 16

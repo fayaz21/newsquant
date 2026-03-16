@@ -12,8 +12,18 @@ def normalize_url(url: str) -> str:
     normalized = parsed._replace(fragment="")
     # Drop common tracking params
     _TRACKING = frozenset(
-        ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
-         "ref", "src", "source", "fbclid", "gclid"]
+        [
+            "utm_source",
+            "utm_medium",
+            "utm_campaign",
+            "utm_term",
+            "utm_content",
+            "ref",
+            "src",
+            "source",
+            "fbclid",
+            "gclid",
+        ]
     )
     if normalized.query:
         parts = []

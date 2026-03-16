@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
 import httpx
 import trafilatura
@@ -19,9 +18,9 @@ class ExtractionResult:
     def __init__(
         self,
         body: str,
-        title: Optional[str] = None,
-        author: Optional[str] = None,
-        language: Optional[str] = None,
+        title: str | None = None,
+        author: str | None = None,
+        language: str | None = None,
         method: str = "trafilatura",
     ):
         self.body = body
@@ -40,11 +39,10 @@ class TrafilaturaExtractor:
         stop=stop_after_attempt(2),
         reraise=False,
     )
-    def _fetch_html(self, url: str) -> Optional[str]:
+    def _fetch_html(self, url: str) -> str | None:
         headers = {
             "User-Agent": (
-                "Mozilla/5.0 (compatible; FinancialNewsScraper/1.0; "
-                "+https://github.com/yourtool)"
+                "Mozilla/5.0 (compatible; FinancialNewsScraper/1.0; +https://github.com/yourtool)"
             )
         }
         with httpx.Client(timeout=settings.request_timeout_seconds) as client:
@@ -53,7 +51,7 @@ class TrafilaturaExtractor:
             return resp.text
         return None
 
-    def extract(self, url: str, html: Optional[str] = None) -> Optional[ExtractionResult]:
+    def extract(self, url: str, html: str | None = None) -> ExtractionResult | None:
         """Extract full text. Fetches URL if html not provided."""
         if html is None:
             html = self._fetch_html(url)
@@ -72,7 +70,7 @@ class TrafilaturaExtractor:
 
         return None
 
-    def _try_trafilatura(self, html: str) -> Optional[ExtractionResult]:
+    def _try_trafilatura(self, html: str) -> ExtractionResult | None:
         try:
             text = trafilatura.extract(
                 html,
@@ -95,7 +93,7 @@ class TrafilaturaExtractor:
             logger.debug("trafilatura failed: %s", exc)
             return None
 
-    def _try_bs4(self, html: str) -> Optional[ExtractionResult]:
+    def _try_bs4(self, html: str) -> ExtractionResult | None:
         try:
             soup = BeautifulSoup(html, "lxml")
             # Remove script/style noise

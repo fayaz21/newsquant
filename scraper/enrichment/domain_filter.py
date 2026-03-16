@@ -1,30 +1,34 @@
-from __future__ import annotations
-
 """Domain-level fast-fail and title similarity utilities."""
+
+from __future__ import annotations
 
 from urllib.parse import urlparse
 
 # Known hard-paywall domains — skip full-text fetch immediately, no retries
-PAYWALL_DOMAINS: frozenset[str] = frozenset([
-    "wsj.com",
-    "barrons.com",
-    "ft.com",
-    "economist.com",
-    "bloomberg.com",
-    "marketwatch.com",
-    "investors.com",
-    "theatlantic.com",
-    "nytimes.com",
-    "washingtonpost.com",
-])
+PAYWALL_DOMAINS: frozenset[str] = frozenset(
+    [
+        "wsj.com",
+        "barrons.com",
+        "ft.com",
+        "economist.com",
+        "bloomberg.com",
+        "marketwatch.com",
+        "investors.com",
+        "theatlantic.com",
+        "nytimes.com",
+        "washingtonpost.com",
+    ]
+)
 
 # Domains that block scrapers (403/401) but are not paywalled — metadata still OK
-SCRAPER_BLOCKED_DOMAINS: frozenset[str] = frozenset([
-    "investing.com",
-    "seekingalpha.com",
-    "morningstar.com",
-    "zacks.com",
-])
+SCRAPER_BLOCKED_DOMAINS: frozenset[str] = frozenset(
+    [
+        "investing.com",
+        "seekingalpha.com",
+        "morningstar.com",
+        "zacks.com",
+    ]
+)
 
 
 def get_domain(url: str) -> str:

@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Optional
 
 from scraper.db import (
     ArticleRepository,
@@ -51,9 +50,9 @@ class Orchestrator:
         self,
         source_config: SourceConfig,
         run_type: str = "realtime",
-        from_dt: Optional[datetime] = None,
-        to_dt: Optional[datetime] = None,
-        ticker: Optional[str] = None,
+        from_dt: datetime | None = None,
+        to_dt: datetime | None = None,
+        ticker: str | None = None,
         url_cursor: int = 0,
     ) -> RunStats:
         stats = RunStats()
@@ -113,14 +112,23 @@ class Orchestrator:
 
             status = "completed" if stats.failed < max(stats.found, 1) else "failed"
             run_repo.finish(
-                run, status,
-                stats.found, stats.stored, stats.duped, stats.failed,
+                run,
+                status,
+                stats.found,
+                stats.stored,
+                stats.duped,
+                stats.failed,
             )
 
         logger.info(
             "[%s] found=%d stored=%d duped=%d near_duped=%d meta_only=%d failed=%d",
-            source_config.name, stats.found, stats.stored, stats.duped,
-            stats.near_duped, stats.metadata_only, stats.failed,
+            source_config.name,
+            stats.found,
+            stats.stored,
+            stats.duped,
+            stats.near_duped,
+            stats.metadata_only,
+            stats.failed,
         )
         return stats
 
@@ -146,9 +154,7 @@ class Orchestrator:
 
         # Determine if we should fetch full text
         is_metadata_only = (
-            config.metadata_only
-            or is_paywalled_domain(raw.url)
-            or is_scraper_blocked(raw.url)
+            config.metadata_only or is_paywalled_domain(raw.url) or is_scraper_blocked(raw.url)
         )
 
         body = ""
@@ -176,7 +182,10 @@ class Orchestrator:
         sh = compute_simhash(body) if body and not is_metadata_only else None
 
         result_q = quality.run(
-            raw, body, uh, ch or "",
+            raw,
+            body,
+            uh,
+            ch or "",
             simhash=sh,
             is_metadata_only=is_metadata_only,
         )
@@ -259,7 +268,8 @@ class BackfillOrchestrator(Orchestrator):
                 url_cursor = meta.get("url_cursor", 0)
                 logger.info(
                     "Resuming backfill for %s from cursor %d",
-                    source_config.name, url_cursor,
+                    source_config.name,
+                    url_cursor,
                 )
 
         stats = RunStats()
@@ -310,19 +320,27 @@ class BackfillOrchestrator(Orchestrator):
                         logger.warning("Backfill error %s: %s", raw.url, exc)
 
                     if stats.found % 1_000 == 0:
-                        run.set_metadata({
-                            "date_cursor": from_dt.isoformat(),
-                            "url_cursor": cursor,
-                        })
+                        run.set_metadata(
+                            {
+                                "date_cursor": from_dt.isoformat(),
+                                "url_cursor": cursor,
+                            }
+                        )
                         session.flush()
                         logger.info(
                             "Backfill checkpoint [%s] cursor=%d stored=%d",
-                            source_config.name, cursor, stats.stored,
+                            source_config.name,
+                            cursor,
+                            stats.stored,
                         )
 
             run_repo.finish(
-                run, "completed",
-                stats.found, stats.stored, stats.duped, stats.failed,
+                run,
+                "completed",
+                stats.found,
+                stats.stored,
+                stats.duped,
+                stats.failed,
             )
 
         return stats

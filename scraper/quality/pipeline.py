@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
-from typing import Callable, Optional
+from typing import Callable
 
 from config.settings import settings
 from scraper.enrichment.language_detector import is_english
@@ -13,29 +13,33 @@ from scraper.models.article import RawArticle
 
 logger = logging.getLogger(__name__)
 
-PAYWALL_PHRASES = frozenset([
-    "subscribe to read",
-    "subscription required",
-    "subscribe for full access",
-    "this content is only available",
-    "premium content",
-    "login to read",
-    "sign in to read",
-    "create a free account",
-    "paywall",
-    "to continue reading",
-    "already a subscriber",
-    "unlock this article",
-])
+PAYWALL_PHRASES = frozenset(
+    [
+        "subscribe to read",
+        "subscription required",
+        "subscribe for full access",
+        "this content is only available",
+        "premium content",
+        "login to read",
+        "sign in to read",
+        "create a free account",
+        "paywall",
+        "to continue reading",
+        "already a subscriber",
+        "unlock this article",
+    ]
+)
 
 # PR Newswire / press-release fluff — reject if body contains ONLY these signals
-PR_FLUFF_ONLY_PHRASES = frozenset([
-    "for more information, contact",
-    "about the company",
-    "safe harbor statement",
-    "forward-looking statements",
-    "non-gaap financial measures",
-])
+PR_FLUFF_ONLY_PHRASES = frozenset(
+    [
+        "for more information, contact",
+        "about the company",
+        "safe harbor statement",
+        "forward-looking statements",
+        "non-gaap financial measures",
+    ]
+)
 
 
 @dataclass
@@ -67,19 +71,19 @@ class QualityPipeline:
     """
 
     WEIGHTS = {
-        "min_word_count":    0.25,
+        "min_word_count": 0.25,
         "completeness_check": 0.25,
-        "paywall_detect":    0.20,
-        "language_check":    0.15,
-        "title_present":     0.10,
+        "paywall_detect": 0.20,
+        "language_check": 0.15,
+        "title_present": 0.10,
         "financial_relevance": 0.05,
     }
 
     def __init__(
         self,
-        db_url_hash_fn: Optional[Callable[[str], bool]] = None,
-        db_content_hash_fn: Optional[Callable[[str], bool]] = None,
-        db_simhashes_fn: Optional[Callable[[], list[str]]] = None,
+        db_url_hash_fn: Callable[[str], bool] | None = None,
+        db_content_hash_fn: Callable[[str], bool] | None = None,
+        db_simhashes_fn: Callable[[], list[str]] | None = None,
     ):
         self._url_exists = db_url_hash_fn or (lambda _: False)
         self._content_exists = db_content_hash_fn or (lambda _: False)
@@ -91,7 +95,7 @@ class QualityPipeline:
         body: str,
         url_hash: str,
         content_hash: str,
-        simhash: Optional[str] = None,
+        simhash: str | None = None,
         is_metadata_only: bool = False,
     ) -> QualityResult:
         now = datetime.now(timezone.utc)
@@ -101,8 +105,10 @@ class QualityPipeline:
         # ── Layer 1: URL dedup (fastest — before any other check) ────────────
         if self._url_exists(url_hash):
             return QualityResult(
-                passed=False, quality_score=0.0,
-                flags=["content_not_duplicate_url"], is_duplicate=True,
+                passed=False,
+                quality_score=0.0,
+                flags=["content_not_duplicate_url"],
+                is_duplicate=True,
             )
 
         # ── Structural hard-rejects ──────────────────────────────────────────
@@ -133,7 +139,9 @@ class QualityPipeline:
             if not wc_check.passed:
                 flags.append(wc_check.flag_name)
                 if is_paywall:
-                    return QualityResult(passed=False, quality_score=0.0, flags=flags, is_paywall=True)
+                    return QualityResult(
+                        passed=False, quality_score=0.0, flags=flags, is_paywall=True
+                    )
                 return QualityResult(passed=False, quality_score=0.0, flags=flags)
 
             if word_count > 50_000:
@@ -147,8 +155,10 @@ class QualityPipeline:
         # ── Layer 2: Content hash dedup ──────────────────────────────────────
         if content_hash and self._content_exists(content_hash):
             return QualityResult(
-                passed=False, quality_score=0.0,
-                flags=["content_not_duplicate_body"], is_duplicate=True,
+                passed=False,
+                quality_score=0.0,
+                flags=["content_not_duplicate_body"],
+                is_duplicate=True,
             )
 
         # ── Layer 3: SimHash near-duplicate ──────────────────────────────────
@@ -230,11 +240,14 @@ class QualityPipeline:
         for phrase in PAYWALL_PHRASES:
             if phrase in lower:
                 return CheckResult(
-                    passed=False, flag_name="paywall_detect", detail=phrase,
+                    passed=False,
+                    flag_name="paywall_detect",
+                    detail=phrase,
                     weight=self.WEIGHTS["paywall_detect"],
                 )
-        return CheckResult(passed=True, flag_name="paywall_detect",
-                           weight=self.WEIGHTS["paywall_detect"])
+        return CheckResult(
+            passed=True, flag_name="paywall_detect", weight=self.WEIGHTS["paywall_detect"]
+        )
 
     def _check_word_count(self, word_count: int) -> CheckResult:
         passed = word_count >= settings.min_word_count

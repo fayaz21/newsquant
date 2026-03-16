@@ -5,7 +5,6 @@ import json
 import logging
 import sys
 from datetime import datetime, timezone
-from typing import Optional
 
 import click
 from rich.console import Console
@@ -23,8 +22,9 @@ def _setup_logging(level: str = "INFO") -> None:
     )
 
 
-def _load_sources(name: Optional[str] = None):
+def _load_sources(name: str | None = None):
     from scraper.scheduler.jobs import load_sources
+
     sources = load_sources()
     if name:
         sources = [s for s in sources if s.name == name]
@@ -56,6 +56,7 @@ def db():
 def db_init():
     """Create all tables (skips existing)."""
     from scraper.db import Base, engine
+
     Base.metadata.create_all(engine)
     console.print("[green]✓[/green] Database tables created.")
 
@@ -64,6 +65,7 @@ def db_init():
 def db_migrate():
     """Run alembic upgrade head."""
     import subprocess
+
     result = subprocess.run(["alembic", "upgrade", "head"], capture_output=True, text=True)
     if result.returncode == 0:
         console.print("[green]✓[/green] Migrations applied.")
@@ -78,6 +80,7 @@ def db_migrate():
 def db_stats():
     """Show article counts and quality summary."""
     from scraper.db import ArticleRepository, get_session
+
     with get_session() as session:
         repo = ArticleRepository(session)
         stats = repo.stats()
@@ -96,7 +99,7 @@ def db_stats():
 @cli.command()
 @click.option("--all", "all_sources", is_flag=True, help="Run all enabled real-time sources")
 @click.option("--source", default=None, help="Run a specific source by name")
-def scrape(all_sources: bool, source: Optional[str]):
+def scrape(all_sources: bool, source: str | None):
     """Run real-time scraping for one or all sources."""
     from scraper.pipeline.orchestrator import Orchestrator
 
@@ -129,7 +132,7 @@ def scrape(all_sources: bool, source: Optional[str]):
 @click.option("--end", required=True, help="End date YYYY-MM-DD")
 @click.option("--workers", default=1, show_default=True, help="Parallel workers")
 @click.option("--ticker", default=None, help="Ticker symbol (Finnhub only)")
-def backfill(source: str, start: str, end: str, workers: int, ticker: Optional[str]):
+def backfill(source: str, start: str, end: str, workers: int, ticker: str | None):
     """Run historical backfill for a source."""
     from scraper.pipeline.orchestrator import BackfillOrchestrator
 
@@ -139,9 +142,7 @@ def backfill(source: str, start: str, end: str, workers: int, ticker: Optional[s
     from_dt = datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc)
     to_dt = datetime.strptime(end, "%Y-%m-%d").replace(tzinfo=timezone.utc)
 
-    console.print(
-        f"[cyan]Backfill:[/cyan] {config.name} | {start} → {end} | workers={workers}"
-    )
+    console.print(f"[cyan]Backfill:[/cyan] {config.name} | {start} → {end} | workers={workers}")
     orchestrator = BackfillOrchestrator()
     stats = orchestrator.run_backfill(config, from_dt, to_dt, workers=workers)
     console.print(
@@ -156,7 +157,7 @@ def backfill(source: str, start: str, end: str, workers: int, ticker: Optional[s
 @cli.command()
 @click.option("--source", default=None, help="Filter by source name")
 @click.option("--last", default="20", help="Number of recent runs to show")
-def status(source: Optional[str], last: str):
+def status(source: str | None, last: str):
     """Show recent scrape run status."""
     from scraper.db import ScrapeRunRepository, get_session
 
@@ -198,11 +199,11 @@ def status(source: Optional[str], last: str):
 @click.option("--limit", default=100, show_default=True)
 @click.option("--format", "fmt", default="table", type=click.Choice(["table", "csv", "json"]))
 def query(
-    ticker: Optional[str],
-    from_dt: Optional[str],
-    to_dt: Optional[str],
-    source: Optional[str],
-    min_quality: Optional[float],
+    ticker: str | None,
+    from_dt: str | None,
+    to_dt: str | None,
+    source: str | None,
+    min_quality: float | None,
     limit: int,
     fmt: str,
 ):
@@ -242,22 +243,33 @@ def query(
     elif fmt == "csv":
         writer = csv.DictWriter(
             sys.stdout,
-            fieldnames=["id", "url", "title", "published_at", "source_name",
-                        "tickers", "quality_score", "word_count", "body"],
+            fieldnames=[
+                "id",
+                "url",
+                "title",
+                "published_at",
+                "source_name",
+                "tickers",
+                "quality_score",
+                "word_count",
+                "body",
+            ],
         )
         writer.writeheader()
         for a in articles:
-            writer.writerow({
-                "id": a.id,
-                "url": a.url,
-                "title": a.title,
-                "published_at": a.published_at.isoformat(),
-                "source_name": a.source_name,
-                "tickers": json.dumps(a.get_tickers()),
-                "quality_score": a.quality_score,
-                "word_count": a.word_count,
-                "body": a.body,
-            })
+            writer.writerow(
+                {
+                    "id": a.id,
+                    "url": a.url,
+                    "title": a.title,
+                    "published_at": a.published_at.isoformat(),
+                    "source_name": a.source_name,
+                    "tickers": json.dumps(a.get_tickers()),
+                    "quality_score": a.quality_score,
+                    "word_count": a.word_count,
+                    "body": a.body,
+                }
+            )
 
     else:
         table = Table(title=f"Articles ({len(articles)} results)")
@@ -288,8 +300,8 @@ def scheduler():
 @click.option("--daemon", is_flag=True, help="Run in foreground (block until Ctrl-C)")
 def scheduler_start(daemon: bool):
     """Start the real-time scraping scheduler."""
-    import signal
     import time
+
     from scraper.scheduler.jobs import start_scheduler
 
     sched = start_scheduler()
@@ -307,6 +319,7 @@ def scheduler_start(daemon: bool):
 def scheduler_stop():
     """Stop the scheduler (no-op if not running in this process)."""
     from scraper.scheduler.jobs import stop_scheduler
+
     stop_scheduler()
     console.print("[yellow]Scheduler stopped (if it was running).[/yellow]")
 

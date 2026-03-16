@@ -1,14 +1,15 @@
 """Core Scraper class — the single public entry point for the finews library."""
+
 from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Optional
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from config.settings import settings
+from finews._sources import BUILTIN_SOURCE_NAMES, BUILTIN_SOURCES
 from scraper.db.base import Base
 from scraper.db.repository import ArticleRepository
 from scraper.enrichment import (
@@ -26,7 +27,6 @@ from scraper.fetchers import BaseFetcher, get_fetcher
 from scraper.models.article import Article, RawArticle
 from scraper.models.source import SourceConfig
 from scraper.quality import QualityPipeline
-from finews._sources import BUILTIN_SOURCE_NAMES, BUILTIN_SOURCES
 
 logger = logging.getLogger(__name__)
 
@@ -134,7 +134,7 @@ class Scraper:
 
     def __init__(
         self,
-        sources: Optional[list] = None,
+        sources: list | None = None,
         *,
         newsapi_key: str = "",
         finnhub_api_key: str = "",
@@ -148,10 +148,7 @@ class Scraper:
 
         # Default: all built-in RSS sources (no API key required)
         if sources is None:
-            sources = [
-                k for k, v in BUILTIN_SOURCES.items()
-                if v.type == "rss"
-            ]
+            sources = [k for k, v in BUILTIN_SOURCES.items() if v.type == "rss"]
 
         self._source_configs: list[SourceConfig] = []
         self._custom_fetchers: list[BaseFetcher] = []
@@ -167,22 +164,20 @@ class Scraper:
                     )
                 self._source_configs.append(BUILTIN_SOURCES[s])
             else:
-                raise TypeError(
-                    f"sources items must be str or BaseFetcher, got {type(s).__name__}"
-                )
+                raise TypeError(f"sources items must be str or BaseFetcher, got {type(s).__name__}")
 
     # ── Public API ────────────────────────────────────────────────────────────
 
     def fetch(
         self,
         *,
-        tickers: Optional[list[str]] = None,
+        tickers: list[str] | None = None,
         days_back: int = 1,
-        from_dt: Optional[datetime] = None,
-        to_dt: Optional[datetime] = None,
+        from_dt: datetime | None = None,
+        to_dt: datetime | None = None,
         min_quality: float = 0.0,
-        limit: Optional[int] = None,
-        save_to: Optional[str] = None,
+        limit: int | None = None,
+        save_to: str | None = None,
     ) -> list[Article]:
         """Fetch, enrich, and return articles from all configured sources.
 
@@ -223,14 +218,17 @@ class Scraper:
         articles: list[Article] = []
 
         for config in self._source_configs:
-            batch = self._run_source(
-                config, from_dt, to_dt, tickers, store, extractor
-            )
+            batch = self._run_source(config, from_dt, to_dt, tickers, store, extractor)
             articles.extend(batch)
 
         for fetcher in self._custom_fetchers:
             batch = self._run_source(
-                fetcher.config, from_dt, to_dt, tickers, store, extractor,
+                fetcher.config,
+                from_dt,
+                to_dt,
+                tickers,
+                store,
+                extractor,
                 fetcher=fetcher,
             )
             articles.extend(batch)
@@ -260,11 +258,11 @@ class Scraper:
         config: SourceConfig,
         from_dt: datetime,
         to_dt: datetime,
-        tickers: Optional[list[str]],
+        tickers: list[str] | None,
         store: _InMemoryStore,
         extractor: TrafilaturaExtractor,
         *,
-        fetcher: Optional[BaseFetcher] = None,
+        fetcher: BaseFetcher | None = None,
     ) -> list[Article]:
         # For single-ticker API sources (e.g. Finnhub company-news endpoint),
         # pass the ticker directly.  Multi-ticker filtering happens after.
@@ -273,9 +271,7 @@ class Scraper:
         try:
             if fetcher is None:
                 fetcher = get_fetcher(config)
-            raw_articles = fetcher.fetch(
-                from_dt=from_dt, to_dt=to_dt, ticker=ticker_hint
-            )
+            raw_articles = fetcher.fetch(from_dt=from_dt, to_dt=to_dt, ticker=ticker_hint)
         except Exception as exc:
             logger.warning("Fetch failed for %s: %s", config.name, exc)
             return []
@@ -292,9 +288,7 @@ class Scraper:
             if article is not None:
                 results.append(article)
 
-        logger.info(
-            "[%s] fetched=%d kept=%d", config.name, len(raw_articles), len(results)
-        )
+        logger.info("[%s] fetched=%d kept=%d", config.name, len(raw_articles), len(results))
         return results
 
     def _process_one(
@@ -304,7 +298,7 @@ class Scraper:
         store: _InMemoryStore,
         extractor: TrafilaturaExtractor,
         quality: QualityPipeline,
-    ) -> Optional[Article]:
+    ) -> Article | None:
         uh = url_hash(raw.url)
 
         # URL-level dedup
@@ -314,9 +308,7 @@ class Scraper:
             return None
 
         is_metadata_only = (
-            config.metadata_only
-            or is_paywalled_domain(raw.url)
-            or is_scraper_blocked(raw.url)
+            config.metadata_only or is_paywalled_domain(raw.url) or is_scraper_blocked(raw.url)
         )
 
         body = ""
@@ -338,7 +330,10 @@ class Scraper:
         sh = compute_simhash(body) if body and not is_metadata_only else None
 
         result_q = quality.run(
-            raw, body, uh, ch or "",
+            raw,
+            body,
+            uh,
+            ch or "",
             simhash=sh,
             is_metadata_only=is_metadata_only,
         )

@@ -3,11 +3,11 @@ from __future__ import annotations
 import json
 import logging
 from datetime import datetime
-from typing import Optional
 
 from config.settings import settings
 from scraper.models.article import RawArticle
 from scraper.models.source import SourceConfig
+
 from .base import BaseFetcher, FetchError
 
 logger = logging.getLogger(__name__)
@@ -24,11 +24,12 @@ class NewsAPIFetcher(BaseFetcher):
 
     def fetch(
         self,
-        from_dt: Optional[datetime] = None,
-        to_dt: Optional[datetime] = None,
-        page: int = 1,
+        from_dt: datetime | None = None,
+        to_dt: datetime | None = None,
+        ticker: str | None = None,
         **kwargs,
     ) -> list[RawArticle]:
+        page: int = kwargs.get("page", 1)
         articles: list[RawArticle] = []
         for query in self.config.queries:
             try:
@@ -40,8 +41,8 @@ class NewsAPIFetcher(BaseFetcher):
     def _fetch_query(
         self,
         query: str,
-        from_dt: Optional[datetime],
-        to_dt: Optional[datetime],
+        from_dt: datetime | None,
+        to_dt: datetime | None,
         page: int,
     ) -> list[RawArticle]:
         params: dict = {
@@ -88,6 +89,8 @@ class NewsAPIFetcher(BaseFetcher):
 
         logger.info(
             "NewsAPI query '%s': fetched %d articles (page %d)",
-            query, len(articles), page,
+            query,
+            len(articles),
+            page,
         )
         return articles

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Generator
 
 from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine
@@ -18,6 +18,7 @@ def _make_engine() -> Engine:
     engine = create_engine(url, **kwargs)
     # Enable WAL mode for SQLite — much better concurrent read performance
     if url.startswith("sqlite"):
+
         @event.listens_for(engine, "connect")
         def set_sqlite_pragma(dbapi_conn, _record):
             cursor = dbapi_conn.cursor()
@@ -25,6 +26,7 @@ def _make_engine() -> Engine:
             cursor.execute("PRAGMA synchronous=NORMAL")
             cursor.execute("PRAGMA foreign_keys=ON")
             cursor.close()
+
     return engine
 
 
