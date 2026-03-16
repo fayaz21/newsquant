@@ -1,0 +1,210 @@
+# ════════════════════════════════════════════════════════════════════════════
+# TIER 1 — Full text + metadata (trafilatura extracts clean body ≥ 200 words)
+# ════════════════════════════════════════════════════════════════════════════
+sources:
+
+  - name: yahoofinance_rss
+    type: rss
+    tier: 1
+    enabled: true
+    full_text_required: true
+    rate_limit_rps: 1.0
+    schedule_cron: "*/15 * * * *"
+    backfill_only: false
+    feeds:
+      - https://finance.yahoo.com/news/rssindex
+      - https://finance.yahoo.com/rss/topstories
+
+  - name: cnbc_rss
+    type: rss
+    tier: 1
+    enabled: true
+    full_text_required: true
+    rate_limit_rps: 1.0
+    schedule_cron: "*/15 * * * *"
+    backfill_only: false
+    feeds:
+      - https://www.cnbc.com/id/10001147/device/rss/rss.html   # markets
+      - https://www.cnbc.com/id/10000664/device/rss/rss.html   # business
+      - https://www.cnbc.com/id/100003114/device/rss/rss.html  # earnings
+
+  - name: motleyfool_rss
+    type: rss
+    tier: 1
+    enabled: true
+    full_text_required: true
+    rate_limit_rps: 0.5
+    schedule_cron: "*/20 * * * *"
+    backfill_only: false
+    feeds:
+      - https://www.fool.com/feeds/index.aspx
+
+  - name: benzinga_rss
+    type: rss
+    tier: 1
+    enabled: true
+    full_text_required: true
+    rate_limit_rps: 0.5
+    schedule_cron: "*/20 * * * *"
+    backfill_only: false
+    feeds:
+      - https://www.benzinga.com/feed
+      - https://www.benzinga.com/feeds/news
+
+  - name: businessinsider_rss
+    type: rss
+    tier: 1
+    enabled: true
+    full_text_required: true
+    rate_limit_rps: 0.5
+    schedule_cron: "*/30 * * * *"
+    backfill_only: false
+    feeds:
+      - https://feeds.businessinsider.com/custom/all
+
+  - name: fortune_rss
+    type: rss
+    tier: 1
+    enabled: true
+    full_text_required: true
+    rate_limit_rps: 0.5
+    schedule_cron: "*/30 * * * *"
+    backfill_only: false
+    feeds:
+      - https://fortune.com/feed/
+
+  - name: prnewswire_rss
+    type: rss
+    tier: 1
+    enabled: true
+    full_text_required: true
+    rate_limit_rps: 0.5
+    schedule_cron: "*/30 * * * *"
+    backfill_only: false
+    # Financial press releases only (earnings, M&A, guidance)
+    financial_filter: true
+    feeds:
+      - https://www.prnewswire.com/rss/news-releases-list.rss?category=EPSF  # financial statements
+      - https://www.prnewswire.com/rss/news-releases-list.rss?category=MLAW  # M&A
+
+# ════════════════════════════════════════════════════════════════════════════
+# TIER 2 — Metadata only (paywalled / partial extraction, title+summary only)
+#          stored with is_metadata_only=True, body = summary from RSS
+# ════════════════════════════════════════════════════════════════════════════
+
+  - name: bloomberg_rss
+    type: rss
+    tier: 2
+    enabled: true
+    full_text_required: false
+    metadata_only: true
+    rate_limit_rps: 1.0
+    schedule_cron: "*/15 * * * *"
+    backfill_only: false
+    feeds:
+      - https://feeds.bloomberg.com/markets/news.rss
+      - https://feeds.bloomberg.com/technology/news.rss
+
+  - name: wsj_rss
+    type: rss
+    tier: 2
+    enabled: true
+    full_text_required: false
+    metadata_only: true
+    rate_limit_rps: 1.0
+    schedule_cron: "*/15 * * * *"
+    backfill_only: false
+    feeds:
+      - https://feeds.a.dj.com/rss/RSSMarketsMain.xml
+      - https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml
+
+  - name: ft_rss
+    type: rss
+    tier: 2
+    enabled: true
+    full_text_required: false
+    metadata_only: true
+    rate_limit_rps: 0.5
+    schedule_cron: "*/30 * * * *"
+    backfill_only: false
+    feeds:
+      - https://www.ft.com/rss/home/uk
+      - https://www.ft.com/myft/following/c42b7996-2da5-400a-b64a-d9bff7982790/rss  # markets
+
+  - name: seekingalpha_rss
+    type: rss
+    tier: 2
+    enabled: true
+    full_text_required: false
+    metadata_only: true
+    rate_limit_rps: 0.5
+    schedule_cron: "*/30 * * * *"
+    backfill_only: false
+    feeds:
+      - https://seekingalpha.com/market_currents.xml
+
+# ════════════════════════════════════════════════════════════════════════════
+# API sources — real-time
+# ════════════════════════════════════════════════════════════════════════════
+
+  - name: newsapi
+    type: api
+    tier: 1
+    enabled: true
+    full_text_required: false
+    rate_limit_rps: 0.5
+    schedule_cron: "*/30 * * * *"
+    backfill_only: false
+    queries:
+      - "stock market"
+      - "earnings"
+      - "Fed rate"
+      - "IPO"
+      - "merger acquisition"
+    language: en
+    page_size: 100
+
+  - name: finnhub
+    type: api
+    tier: 1
+    enabled: true
+    full_text_required: false
+    rate_limit_rps: 1.0
+    schedule_cron: "*/10 * * * *"
+    backfill_only: false
+    categories:
+      - general
+      - forex
+      - merger
+
+# ════════════════════════════════════════════════════════════════════════════
+# Backfill-only
+# ════════════════════════════════════════════════════════════════════════════
+
+  - name: gdelt
+    type: gdelt
+    tier: 1
+    enabled: true
+    full_text_required: true
+    rate_limit_rps: 2.0
+    schedule_cron: null
+    backfill_only: true
+    financial_themes:
+      - ECON_
+      - MARKET_
+      - BUS_
+      - COMPANY_
+    batch_days: 7
+
+  - name: wayback
+    type: wayback
+    tier: 1
+    enabled: true
+    full_text_required: true
+    rate_limit_rps: 0.5
+    schedule_cron: null
+    backfill_only: true
+    domains:
+      - reuters.com
+      - cnbc.com
+      - fortune.com
