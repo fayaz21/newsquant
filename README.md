@@ -2,10 +2,10 @@
 
 **The financial news data library for Python.**
 
-`pip install financial-news-scraper`
+`pip install finews`
 
-[![PyPI](https://img.shields.io/pypi/v/financial-news-scraper)](https://pypi.org/project/financial-news-scraper/)
-[![Python](https://img.shields.io/pypi/pyversions/financial-news-scraper)](https://pypi.org/project/financial-news-scraper/)
+[![PyPI](https://img.shields.io/pypi/v/finews)](https://pypi.org/project/finews/)
+[![Python](https://img.shields.io/pypi/pyversions/finews)](https://pypi.org/project/finews/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -26,13 +26,13 @@ sources, and scores every article on a 0–1 quality scale.
 ## Install
 
 ```bash
-pip install financial-news-scraper
+pip install finews
 ```
 
 Python 3.9+ required. For PostgreSQL persistence add the optional extra:
 
 ```bash
-pip install "financial-news-scraper[postgres]"
+pip install "finews[postgres]"
 ```
 
 ---
@@ -237,8 +237,8 @@ Bug reports and pull requests are welcome. For major changes, open an issue
 first to discuss what you'd like to change.
 
 ```bash
-git clone https://github.com/your-username/financial-news-scraper
-cd financial-news-scraper
+git clone https://github.com/your-username/finews
+cd finews
 pip install -e ".[dev]"
 pytest
 ```
